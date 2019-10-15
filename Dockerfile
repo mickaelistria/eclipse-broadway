@@ -14,23 +14,26 @@ RUN dnf -y update && dnf -y install \
 # Once recent enough version of GTK is available in Fedora, replace all that by just adding `gtk3` to above dnf command
 RUN dnf -y update && dnf -y install \
       gtk-doc cairo-gobject-devel libepoxy-devel atk-devel at-spi2-atk-devel gobject-introspection-devel \
-      gettext-devel pango-devel fribidi-devel gdk-pixbuf2-devel file make diffutils patch \
+      gettext-devel pango-devel fribidi-devel gdk-pixbuf2-devel file make diffutils patch xz \
       && dnf clean all
 COPY gtk_broadway_selection.issue1630.patch /root
 RUN cd /root && \
-	wget -O- https://gitlab.gnome.org/GNOME/gtk/-/archive/gtk-3-24/gtk-gtk-3-24.tar.gz | tar xz && \
-	cd gtk-gtk-3-24 && \
+	wget -O- https://download.gnome.org/sources/gtk+/3.24/gtk+-3.24.12.tar.xz | xz -d | tar -x  && \
+	cd gtk+-3.24.12/ && \
 	patch -p1 -i /root/gtk_broadway_selection.issue1630.patch && \
-	./autogen.sh --enable-broadway-backend --enable-x11-backend --enable-introspection --disable-gtk-docs --disable-cups --disable-xinerama --disable-xkb --prefix=/opt/gtk && \
-	./configure --enable-broadway-backend --enable-x11-backend --enable-introspection --disable-gtk-docs --disable-cups --disable-xinerama --disable-xkb --prefix=/opt/gtk && \
+	echo pwd=$(pwd) && \
+	echo shell=$SHELL && \
+	ls . && \
+	echo "configure..." && \
+	$(pwd)/configure --enable-broadway-backend --enable-x11-backend --enable-introspection --disable-gtk-doc --disable-cups --disable-papi --disable-xinerama --disable-xkb --prefix=/opt/gtk && \
 	make && \
 	make install && \
 	cp -rf /opt/gtk/share/glib-2.0/schemas/* /usr/share/glib-2.0/schemas/ && \
 	cd .. && \
-	rm -r gtk-gtk-3-24 
+	rm -r gtk+-3.24.12 
 RUN dnf -y remove \
       gtk-doc cairo-gobject-devel libepoxy-devel atk-devel at-spi2-atk-devel gobject-introspection-devel \
-      gettext-devel pango-devel fribidi-devel gdk-pixbuf2-devel file make diffutils \
+      gettext-devel pango-devel fribidi-devel gdk-pixbuf2-devel file make diffutils xz \
       && dnf clean all
 ENV LD_LIBRARY_PATH=/opt/gtk/lib
 ENV PATH="/opt/gtk/bin:$PATH"
